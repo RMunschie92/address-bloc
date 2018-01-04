@@ -1,4 +1,3 @@
-# #1
 require_relative '../models/address_book'
 
 class MenuController
@@ -9,19 +8,17 @@ class MenuController
   end
 
   def main_menu
-    # #2
     puts "Main Menu - #{address_book.entries.count} entries"
     puts "1 - View all entries"
     puts "2 - Create an entry"
     puts "3 - Search for an entry"
     puts "4 - Import entries from a CSV"
-    puts "5 - Exit"
+    puts "5 - View Entry Number n"
+    puts "6 - Exit"
     print "Enter your selection: "
 
-    # #3
     selection = gets.to_i
 
-    # #7
     case selection
       when 1
         system "clear"
@@ -40,8 +37,11 @@ class MenuController
         read_csv
         main_menu
       when 5
+        system "clear"
+        view_entry_n
+        main_menu
+      when 6
         puts "Good-bye!"
-        # #8
         exit(0)
       else
         system "clear"
@@ -50,13 +50,10 @@ class MenuController
     end
   end
 
-  # #10
   def view_all_entries
-    # #14
     address_book.entries.each do |entry|
       system "clear"
       puts entry.to_s
-    # #15
       entry_submenu(entry)
     end
 
@@ -65,7 +62,6 @@ class MenuController
   end
 
   def create_entry
-    # #11
     system "clear"
     puts "New AddressBloc Entry"
     print "Name: "
@@ -75,7 +71,6 @@ class MenuController
     print "Email: "
     email = gets.chomp
 
-    # #13
     address_book.add_entry(name, phone, email)
 
     system "clear"
@@ -83,25 +78,81 @@ class MenuController
   end
 
   def search_entries
+    print "Search by name: "
+    name = gets.chomp
+    match = address_book.binary_search(name)
+    system "clear"
+    if match
+      puts match.to_s
+      search_submenu(match)
+    else
+      puts "No match found for #{name}"
+    end
   end
 
   def read_csv
+    print "Enter CSV file to import: "
+    file_name = gets.chomp
+
+    if file_name.empty?
+      system "clear"
+      puts "No CSV file read"
+      main_menu
+    end
+
+    begin
+      entry_count = address_book.import_from_csv(file_name).count
+      system "clear"
+      puts "#{entry_count} new entries added from #{file_name}"
+    rescue
+      puts "#{file_name} is not a valid CSV file, please enter the name of a valid CSV file"
+      read_csv
+    end
+  end
+
+  def view_entry_n
+    puts "Which entry number would you like to see?"
+    entry_n = gets.to_i
+    if entry_n == 0 || entry_n > address_book.entries.size
+      puts "Please enter a valid entry number"
+    else
+      puts address_book.entries[entry_n - 1]
+    end
+  end
+
+  def delete_entry(entry)
+    address_book.entries.delete(entry)
+    puts "#{entry.name} has been deleted"
+  end
+
+  def edit_entry(entry)
+    print "Updated name: "
+    name = gets.chomp
+    print "Updated phone number: "
+    phone_number = gets.chomp
+    print "Updated email: "
+    email = gets.chomp
+
+    entry.name = name if !name.empty?
+    entry.phone_number = phone_number if !phone_number.empty?
+    entry.email = email if !email.empty?
   end
 
   def entry_submenu(entry)
-    # #16
     puts "n - next entry"
     puts "d - delete entry"
     puts "e - edit this entry"
     puts "m - return to main menu"
 
-    # #17
     selection = gets.chomp
 
     case selection
       when "n"
       when "d"
+        delete_entry(entry)
       when "e"
+        edit_entry(entry)
+        entry_submenu(entry)
       when "m"
         system "clear"
         main_menu
@@ -109,6 +160,32 @@ class MenuController
         system "clear"
         puts "#{selection} is not a valid input"
         entry_submenu(entry)
+    end
+  end
+
+  def search_submenu(entry)
+    puts "\nd - delete entry"
+    puts "e - edit this entry"
+    puts "m - return to main menu"
+    selection = gets.chomp
+
+    case selection
+      when "d"
+        system "clear"
+        delete_entry(entry)
+        main_menu
+      when "e"
+        edit_entry(entry)
+        system "clear"
+        main_menu
+      when "m"
+        system "clear"
+        main_menu
+      else
+        system "clear"
+        puts "#{selection} is not a valid input"
+        puts entry.to_s
+        search_submenu(entry)
     end
   end
 end
